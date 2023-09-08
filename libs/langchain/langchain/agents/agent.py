@@ -7,7 +7,19 @@ import logging
 import time
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
+from langchain.callbacks.message_log import MessageLog, MessageLogCallbackHandler
+from langchain.schema.runnable.config import RunnableConfig
 
 import yaml
 
@@ -736,6 +748,32 @@ s
     def save_agent(self, file_path: Union[Path, str]) -> None:
         """Save the underlying agent."""
         return self.agent.save(file_path)
+
+    async def astream(
+        self,
+        input: Any,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[MessageLog]:
+        """
+        Default implementation of astream, which calls ainvoke.
+        Subclasses should override this method if they support streaming output.
+        """
+        stream = MessageLogCallbackHandler(lambda run: False)
+
+        config = config or {}
+        callbacks = config.get("callbacks", [])
+        if isinstance(callbacks, list):
+            callbacks.append(stream)
+        if isinstance(callbacks, BaseCallbackManager):
+            callbacks.inheritable_handlers.append(stream)
+
+        task = asyncio.create_task(self.ainvoke(input, config, **kwargs))
+
+        async for message in stream:
+            yield message
+
+        await task
 
     def iter(
         self,
