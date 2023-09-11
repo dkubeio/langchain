@@ -18,8 +18,6 @@ from typing import (
     Tuple,
     Union,
 )
-from langchain.callbacks.message_log import MessageLog, MessageLogCallbackHandler
-from langchain.schema.runnable.config import RunnableConfig
 
 import yaml
 
@@ -34,6 +32,7 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
     Callbacks,
 )
+from langchain.callbacks.message_log import MessageLog, MessageLogCallbackHandler
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.prompts.few_shot import FewShotPromptTemplate
@@ -48,6 +47,7 @@ from langchain.schema import (
 )
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.schema.messages import BaseMessage
+from langchain.schema.runnable.config import RunnableConfig
 from langchain.tools.base import BaseTool
 from langchain.utilities.asyncio import asyncio_timeout
 from langchain.utils.input import get_color_mapping
@@ -759,10 +759,12 @@ s
         Default implementation of astream, which calls ainvoke.
         Subclasses should override this method if they support streaming output.
         """
-        stream = MessageLogCallbackHandler(lambda run: False)
+        stream = MessageLogCallbackHandler(lambda run: True)
 
         config = config or {}
-        callbacks = config.get("callbacks", [])
+        callbacks = config.get("callbacks")
+        if callbacks is None:
+            config["callbacks"] = [stream]
         if isinstance(callbacks, list):
             callbacks.append(stream)
         if isinstance(callbacks, BaseCallbackManager):
