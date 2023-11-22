@@ -223,7 +223,7 @@ class Weaviate(VectorStore):
                 ids_list.append(_id)
 
         #return self.__add(texts, embeddings, metadatas=metadatas, ids=ids_list, **kwargs)
-        return ""
+        return ids_list
     
 
     def similarity_search(
@@ -371,6 +371,7 @@ class Weaviate(VectorStore):
         results = (
             query_obj.with_additional("vector")
             .with_near_vector(vector)
+            .with_additional("id")
             .with_limit(fetch_k)
             .do()
         )
@@ -384,8 +385,10 @@ class Weaviate(VectorStore):
         docs = []
         for idx in mmr_selected:
             text = payload[idx].pop(self._text_key)
-            payload[idx].pop("_additional")
+            _additional = payload[idx].pop("_additional")
+
             meta = payload[idx]
+            meta["id"] = _additional["id"]
             docs.append(Document(page_content=text, metadata=meta))
         return docs
 
