@@ -417,6 +417,7 @@ class Weaviate(VectorStore):
                 query_obj.with_near_vector(vector)
                 .with_limit(k)
                 .with_additional("vector")
+                .with_additional("id")
                 .do()
             )
         else:
