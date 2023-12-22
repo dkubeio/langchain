@@ -418,6 +418,7 @@ class Weaviate(VectorStore):
                 .with_limit(k)
                 .with_additional("vector")
                 .with_additional("id")
+                .with_additional("distance")
                 .do()
             )
         else:
@@ -434,7 +435,8 @@ class Weaviate(VectorStore):
         docs_and_scores = []
         for res in result["data"]["Get"][self._index_name]:
             text = res.pop(self._text_key)
-            score = np.dot(res["_additional"]["vector"], embedded_query)
+            #score = np.dot(res["_additional"]["vector"], embedded_query)
+            score = res["_additional"]["distance"]
             docs_and_scores.append((Document(page_content=text, metadata=res), score))
         return docs_and_scores
 
