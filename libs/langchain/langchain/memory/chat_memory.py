@@ -36,6 +36,6 @@ class BaseChatMemory(BaseMemory, ABC):
         self.chat_memory.add_user_message(input_str)
         self.chat_memory.add_ai_message(output_str)
 
-    def clear(self) -> None:
+    def clear(self,k=0) -> None:
         """Clear memory contents."""
-        self.chat_memory.clear()
+        self.chat_memory.clear(k)
