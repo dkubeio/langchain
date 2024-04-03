@@ -593,13 +593,25 @@ class Weaviate(VectorStore):
         ## Todo: Support multiple keys, different operators
 
         #try:
-        for property, value in attribute:
+        # for property, value in attribute:
+        #     self._client.batch.delete_objects(
+        #             class_name = self._index_name, 
+        #             where = {
+        #                 'path' : [].add(property),
+        #                 'operator' : 'Equal',
+        #                 'valueText' : value
+        #             },
+        #     )
+
+        for key, value in attribute.items():
+            attr =[]
+            attr.append(key)
             self._client.batch.delete_objects(
-                    class_name = self._index_name, 
+                    class_name = self._index_name,
                     where = {
-                        'path' : [].add(property),
+                        'path' : attr,
                         'operator' : 'Equal',
-                        'valueText' : value
+                        'valueText' : value,
                     },
             )
         #except:
