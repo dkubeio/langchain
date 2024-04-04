@@ -604,8 +604,7 @@ class Weaviate(VectorStore):
         #     )
 
         for key, value in attribute.items():
-            attr =[]
-            attr.append(key)
+            attr =[key]
             self._client.batch.delete_objects(
                     class_name = self._index_name,
                     where = {
