@@ -1,16 +1,5 @@
-from __future__ import annotations
-
-import datetime
-import os
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
+from langchain_community.vectorstores.weaviate import (
+    Weaviate,
 )
 from uuid import uuid4
 
@@ -654,4 +643,7 @@ class Weaviate(VectorStore):
 
         cursor = response["data"]["Get"][self._index_name][-1]["_additional"]["id"]
         return docs, cursor
-    
+
+__all__ = [
+    "Weaviate",
+]

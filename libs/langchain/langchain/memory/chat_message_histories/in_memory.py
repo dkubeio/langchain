@@ -1,4 +1,4 @@
-from typing import List
+from langchain_community.chat_message_histories.in_memory import ChatMessageHistory
 
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.schema import (
@@ -24,3 +24,5 @@ class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
             del(self.messages[:-(k*2)])
         else:
             self.messages = []
+
+__all__ = ["ChatMessageHistory"]

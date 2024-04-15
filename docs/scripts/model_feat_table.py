@@ -1,15 +1,11 @@
 import os
 from pathlib import Path
 
-from langchain import chat_models, llms
-from langchain.chat_models.base import BaseChatModel, SimpleChatModel
-from langchain.llms.base import BaseLLM, LLM
+from langchain_community import chat_models, llms
+from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
+from langchain_core.language_models.llms import LLM, BaseLLM
 
-INTEGRATIONS_DIR = (
-    Path(os.path.abspath(__file__)).parents[1]
-    / "docs"
-    / "integrations"
-)
+INTEGRATIONS_DIR = Path(os.path.abspath(__file__)).parents[1] / "docs" / "integrations"
 LLM_IGNORE = ("FakeListLLM", "OpenAIChat", "PromptLayerOpenAIChat")
 LLM_FEAT_TABLE_CORRECTION = {
     "TextGen": {"_astream": False, "_agenerate": False},
@@ -19,15 +15,20 @@ LLM_FEAT_TABLE_CORRECTION = {
     "PromptLayerOpenAI": {"batch_generate": False, "batch_agenerate": False},
 }
 CHAT_MODEL_IGNORE = ("FakeListChatModel", "HumanInputChatModel")
+
 CHAT_MODEL_FEAT_TABLE_CORRECTION = {
     "ChatMLflowAIGateway": {"_agenerate": False},
     "PromptLayerChatOpenAI": {"_stream": False, "_astream": False},
     "ChatKonko": {"_astream": False, "_agenerate": False},
+    "ChatOpenAI": {"tool_calling": True},
+    "ChatAnthropic": {"tool_calling": True},
+    "ChatMistralAI": {"tool_calling": True},
 }
+
 
 LLM_TEMPLATE = """\
 ---
-sidebar_position: 0
+sidebar_position: 1
 sidebar_class_name: hidden
 ---
 
@@ -43,11 +44,11 @@ Each LLM integration can optionally provide native implementations for async, st
 
 {table}
 
-"""
+"""  # noqa: E501
 
 CHAT_MODEL_TEMPLATE = """\
 ---
-sidebar_position: 1
+sidebar_position: 0
 sidebar_class_name: hidden
 ---
 
@@ -64,7 +65,7 @@ The table shows, for each integration, which features have been implemented with
 
 {table}
 
-"""
+"""  # noqa: E501
 
 
 def get_llm_table():
@@ -105,6 +106,7 @@ def get_llm_table():
         "_astream",
         "batch_generate",
         "batch_agenerate",
+        "tool_calling",
     ]
     title = [
         "Model",
@@ -114,6 +116,7 @@ def get_llm_table():
         "Async stream",
         "Batch",
         "Async batch",
+        "Tool calling",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
@@ -121,7 +124,8 @@ def get_llm_table():
     return "\n".join(["|".join(row) for row in rows])
 
 
-def get_chat_model_table():
+def get_chat_model_table() -> str:
+    """Get the table of chat models."""
     feat_table = {}
     for cm in chat_models.__all__:
         feat_table[cm] = {}
@@ -137,8 +141,15 @@ def get_chat_model_table():
         for k, v in {**feat_table, **CHAT_MODEL_FEAT_TABLE_CORRECTION}.items()
         if k not in CHAT_MODEL_IGNORE
     }
-    header = ["model", "_agenerate", "_stream", "_astream"]
-    title = ["Model", "Invoke", "Async invoke", "Stream", "Async stream"]
+    header = ["model", "_agenerate", "_stream", "_astream", "tool_calling"]
+    title = [
+        "Model",
+        "Invoke",
+        "Async invoke",
+        "Stream",
+        "Async stream",
+        "Tool calling",
+    ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
     for llm, feats in sorted(final_feats.items()):
         rows += [[llm, "✅"] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]

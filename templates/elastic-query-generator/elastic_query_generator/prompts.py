@@ -1,4 +1,4 @@
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 PROMPT_SUFFIX = """Only use the following Elasticsearch indices:
 {indices_info}
@@ -16,6 +16,6 @@ Use the following format:
 
 Question: Question here
 ESQuery: Elasticsearch Query formatted as json
-"""
+"""  # noqa: E501
 
 DSL_PROMPT = PromptTemplate.from_template(DEFAULT_DSL_TEMPLATE + PROMPT_SUFFIX)

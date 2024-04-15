@@ -14,7 +14,7 @@ if __name__ == "__main__":
             "chat_history": [],
         }
     )
-    print(response)
+    print(response)  # noqa: T201
 
     follow_up_question = "What are their objectives?"
 
@@ -23,9 +23,11 @@ if __name__ == "__main__":
             "question": follow_up_question,
             "chat_history": [
                 "What is the nasa sales team?",
-                "The sales team of NASA consists of Laura Martinez, the Area Vice-President of North America, and Gary Johnson, the Area Vice-President of South America. (Sales Organization Overview)",
+                "The sales team of NASA consists of Laura Martinez, the Area "
+                "Vice-President of North America, and Gary Johnson, the Area "
+                "Vice-President of South America. (Sales Organization Overview)",
             ],
         }
     )
 
-    print(response)
+    print(response)  # noqa: T201

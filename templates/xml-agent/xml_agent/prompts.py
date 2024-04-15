@@ -1,5 +1,5 @@
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.schema import AgentAction, AgentFinish
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 template = """You are a helpful assistant. Help the user answer any questions.
 
@@ -27,14 +27,16 @@ Assistant: <tool>search</tool><tool_input>weather in SF</tool_input>
 It is 64 degress in SF
 
 
-Begin!"""
+Begin!"""  # noqa: E501
 
-conversational_prompt = ChatPromptTemplate.from_messages([
-    ("system", template),
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("user", "{question}"),
-    ("ai", "{agent_scratchpad}")
-])
+conversational_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", template),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("user", "{question}"),
+        ("ai", "{agent_scratchpad}"),
+    ]
+)
 
 
 def parse_output(message):
