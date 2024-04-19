@@ -60,6 +60,9 @@ def _default_score_normalizer(val: float) -> float:
 
 
 def _json_serializable(value: Any) -> Any:
+    import json
+    if isinstance(value, dict):
+        return json.dumps(value)
     if isinstance(value, datetime.datetime):
         return value.isoformat()
     return value
@@ -360,6 +363,7 @@ class Weaviate(VectorStore):
                 query_obj.with_near_vector(vector)
                 .with_limit(k)
                 .with_additional("vector")
+                .with_additional("id")
                 .do()
             )
         else:
@@ -367,6 +371,7 @@ class Weaviate(VectorStore):
                 query_obj.with_near_text(content)
                 .with_limit(k)
                 .with_additional("vector")
+                .with_additional("id")
                 .do()
             )
 
@@ -526,3 +531,132 @@ class Weaviate(VectorStore):
         # TODO: Check if this can be done in bulk
         for id in ids:
             self._client.data_object.delete(uuid=id)
+
+
+    def add_embeddings(
+        self,
+        text_embeddings: Iterable[Tuple[str, List[float]]],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run more texts through the embeddings and add to the vectorstore.
+
+        Args:
+            text_embeddings: Iterable pairs of string and embedding to
+                add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+            ids: Optional list of unique IDs.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        if not isinstance(self.docstore, AddableMixin):
+            raise ValueError(
+                "If trying to add texts, the underlying docstore should support "
+                f"adding items, which {self.docstore} does not"
+            )
+        """
+        from weaviate.util import get_valid_uuid
+        ids_list = []
+        # Embed and create the documents.
+        texts, embeddings = zip(*text_embeddings)
+        with self._client.batch as batch:
+            for i, text in enumerate(texts):
+                data_properties = {self._text_key: text}
+                if metadatas is not None:
+                    for key, val in metadatas[i].items():
+                        data_properties[key] = _json_serializable(val)
+
+                # Allow for ids (consistent w/ other methods)
+                # # Or uuids (backwards compatble w/ existing arg)
+                # If the UUID of one of the objects already exists
+                # then the existing object will be replaced by the new object.
+                _id = get_valid_uuid(uuid4())
+                if ids != None:
+                    _id = ids[i]
+ 
+                vector = embeddings[i]
+                batch.add_data_object(
+                    data_object=data_properties,
+                    class_name=self._index_name,
+                    uuid=_id,
+                    vector=vector,
+                )
+                ids_list.append(_id)
+
+        #return self.__add(texts, embeddings, metadatas=metadatas, ids=ids_list, **kwargs)
+        return ""
+
+    def delete_by_attribute(self, attribute: Optional[dict] = None) -> None:
+        """Delete by matching filter
+
+        Args:
+            attribute: key, value to match for deletion
+        """
+        ## Todo: Support multiple keys, different operators
+
+        #try:
+        
+        for key, value in attribute.items():
+            attr =[key]
+            self._client.batch.delete_objects(
+                class_name = self._index_name,
+                where = {
+                    'path' : attr,
+                    'operator' : 'Equal',
+                    'valueText' : value,
+                },
+            )
+        #except:
+        #    pass
+
+    def get_objects(self, 
+                    attribute: Optional[dict] = None, 
+                    properties: Optional[list] = None, 
+                    limit:int = 1000,
+                    cursor:str = None) -> Tuple[List,str]:
+        """get by matching filter
+
+        Args:
+            attribute: key, value to match for query
+            Properties: List of properties to retrieve
+            limit: How many to fetch
+            cursor: To continue from a previous run
+        """
+        ## Todo: Support multiple keys, different operators
+        
+        schema = self._client.schema.get()
+        all_classes = [c["class"] for c in schema["classes"]]
+        if self._index_name not in all_classes:
+            return [], ""
+
+        where = dict()
+        if attribute is not None:
+            for property, value in attribute:
+                where['path'] = [property]
+                where['operator'] = 'Equal'
+                where['valueText'] = value
+        
+        properties.append(self._text_key)
+
+        query = ( self._client.query
+                .get(self._index_name, properties)
+                .with_additional(["id"])
+                .with_limit(limit)
+            )
+        if where != dict():
+            query = query.with_where(where)
+        
+        if cursor is not None:
+            response = query.with_after(cursor).do()
+        else:
+            response = query.do()
+        docs = []
+
+        for res in response["data"]["Get"][self._index_name]:
+            text = res.pop(self._text_key)
+            docs.append(Document(page_content=text, metadata=res))
+
+        cursor = response["data"]["Get"][self._index_name][-1]["_additional"]["id"]
+        return docs, cursor
+    
